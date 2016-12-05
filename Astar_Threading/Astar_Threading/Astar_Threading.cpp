@@ -1,12 +1,28 @@
 // Astar_Threading.cpp : Defines the entry point for the console application.
+//
+#include "stdafx.h"
+#include <ctime>
+#include <iostream>
+using namespace std;
+#include "Game.h"
 
-#include <SDL.h>
 
+/**Create and initialises an instance of game, and clean up when the game is closed*/
 
-int _tmain(int argc, char* argv[])
+int main()
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//SDL_QUIT();
+	srand(time(NULL));
+
+	Game game;
+
+	cout << "Initialising Game" << endl;
+
+	if (!game.init()) 
+		cout << "Failed to initialise game" << '\n';
+
+	game.loop();
+
+	game.destroy();
+
 	return 0;
 }
-
