@@ -44,8 +44,6 @@ Grid::Grid(float width, float height, int numTiles)
 
 		m_grid.push_back(tiles);
 	}
-
-	int check = 0;
 }
 
 Grid::~Grid()
@@ -131,14 +129,6 @@ std::vector<Tile*> Grid::getNeighbourNodes(std::pair<int, int> index)
 	return _tiles;
 }
 
-float Grid::cost(Tile* t1, Tile* t2)
-{
-	//float c = (t2->getPosition().x - t1->getPosition().x) + (t2->getPosition().y - t1->getPosition().y);
-	float n = std::sqrt(((t1->getPosition().x - t2->getPosition().x) * (t1->getPosition().x - t2->getPosition().x)) + ((t1->getPosition().y - t2->getPosition().y) * (t1->getPosition().y - t2->getPosition().y)));
-
-	return n;
-}
-
 void Grid::resetBoard()
 {
 	for (int i = 0; i < m_grid.size(); i++)
@@ -164,9 +154,6 @@ void Grid::resetBoard()
 						m_grid[i][j]->setColor(Colour(255, 255, 255));
 				}
 			}
-			m_grid[i][j]->setMarked(false);
-			m_grid[i][j]->setCostSoFar(0);
-			m_grid[i][j]->setHeuristic(0);
 			m_grid[i][j]->setFScore(0);
 		}
 	}

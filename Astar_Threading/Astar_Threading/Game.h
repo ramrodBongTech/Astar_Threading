@@ -35,11 +35,18 @@ private:
 	bool			m_quit;								// Boolean to quit out of the game
 	int				m_numTiles;							// The number of rows / columns
 
+	SDL_Thread*		m_thread1 = nullptr;
+	SDL_Thread*		m_thread2 = nullptr;
+
 	Grid*			m_grid = nullptr;					// Pointer to grid object
 	Player*			m_player = nullptr;					// Pointer to player object
 	Enemy*			m_enemy = nullptr;					// Pointer to enemy object
+	Enemy*			en2 = nullptr;						// Second enemy to test second thread
 
 	void			resetBoard();						// Function to reset the board
-	void			Astar();							// Function to run A* Algorithim
+	void			Astar(Tile* start, Tile* end);		// Function to run A* Algorithim	
+	int				getCost(Tile* t1, Tile* t2);		// Function to get the cost from one tile to another
+
+	//int threadedAstar(void* ptr);
 };
 

@@ -3,30 +3,62 @@
 
 Tile::Tile(float width, float height, Point2D pos, std::pair<int, int> index) :
 	m_fScore(0),
-	m_heuristic(0),
-	m_costSoFar(0),
 	m_wall(false),
 	m_rect(Rect(pos, Size2D(width, height))),
-	m_index(index)
+	m_index(index),
+	m_lock(SDL_CreateMutex())
 {}
 
-Tile::~Tile(){}
+Tile::~Tile()
+{
+	SDL_DestroyMutex(m_lock);
+}
 
-float Tile::getFScore(){ return m_fScore; }
-float Tile::getHeuristic(){ return m_heuristic; }
-float Tile::getCostSoFar(){ return m_costSoFar; }
-Point2D Tile::getPosition(){ return m_rect.pos; }
-std::pair<int, int>	Tile::getIndex(){ return m_index; }
-Tile* Tile::getPrevious(){ return m_previous; }
-bool Tile::isWall() { return m_wall; }
-bool Tile::isMarked(){ return m_marked; }
+int Tile::getFScore()
+{
+	SDL_LockMutex(m_lock);
+	int temp = m_fScore;
+	SDL_UnlockMutex(m_lock);
+	return temp;
+}
 
-void Tile::setColor(Colour c){ m_colour = c; }
-void Tile::setFScore(float fScore){ m_fScore = fScore; }
-void Tile::setHeuristic(float heuristic){ m_heuristic = heuristic; }
-void Tile::setCostSoFar(float csf){ m_costSoFar = csf; }
-void Tile::setMarked(bool marked){ m_marked = marked; }
-void Tile::setPrevious(Tile* t){ m_previous = t; }
+Point2D Tile::getPosition()
+{
+	SDL_LockMutex(m_lock);
+	Point2D temp = m_rect.pos;
+	SDL_UnlockMutex(m_lock);
+	return temp;
+}
+
+std::pair<int, int>	Tile::getIndex()
+{
+	SDL_LockMutex(m_lock);
+	std::pair<int, int> temp = m_index;
+	SDL_UnlockMutex(m_lock);
+	return temp;
+}
+
+bool Tile::isWall()
+{
+	SDL_LockMutex(m_lock);
+	bool temp = m_wall;
+	SDL_UnlockMutex(m_lock);
+	return m_wall;
+}
+
+void Tile::setColor(Colour c)
+{
+	SDL_LockMutex(m_lock);
+	m_colour = c;
+	SDL_UnlockMutex(m_lock);
+}
+
+void Tile::setFScore(float fScore)
+{
+	SDL_LockMutex(m_lock);
+	m_fScore = fScore;
+	SDL_UnlockMutex(m_lock);
+}
 
 void Tile::setWall()
 { 
@@ -34,4 +66,9 @@ void Tile::setWall()
 	m_colour = Colour(0, 0, 255);
 }
 
-void Tile::draw(Renderer& renderer){ renderer.drawRect(m_rect, m_colour); }
+void Tile::draw(Renderer& renderer)
+{
+	SDL_LockMutex(m_lock);
+	renderer.drawRect(m_rect, m_colour);
+	SDL_UnlockMutex(m_lock);
+}
