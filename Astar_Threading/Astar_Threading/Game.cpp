@@ -111,7 +111,7 @@ bool Game::init()
 		m_enemies.push_back(new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex()));
 	}
 
-	m_pool = ThreadPool::getInstance();
+	m_pool = new ThreadPool();
 
 	//creates our renderer, which looks after drawing and the window
 	m_renderer.init(Size2D(SCREEN_WIDTH, SCREEN_HEIGHT), "A* Threading");

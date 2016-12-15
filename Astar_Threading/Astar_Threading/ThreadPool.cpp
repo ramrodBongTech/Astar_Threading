@@ -1,15 +1,14 @@
 #include "stdafx.h"
 #include "ThreadPool.h"
 
-ThreadPool::ThreadPool()
-	:
-	mutex(SDL_CreateMutex()),
-	semaphore(SDL_CreateSemaphore(0)),
-	numThreads(7),
-	numTasks(0)
+ThreadPool::ThreadPool() :
+mutex(SDL_CreateMutex()),
+semaphore(SDL_CreateSemaphore(0)),
+numThreads(7),
+numTasks(0)
 {
 	for (int i = 0; i < numThreads; ++i)
-		workers.push_back(SDL_CreateThread(work, "Worker", (void*)(i + 1)));
+		workers.push_back(SDL_CreateThread(work, "Worker", (void*)this));
 }
 
 ThreadPool::~ThreadPool()
@@ -18,14 +17,14 @@ ThreadPool::~ThreadPool()
 		SDL_DetachThread(workers[i]);
 }
 
-ThreadPool* ThreadPool::getInstance()
-{
-	if (instance == nullptr)
-	{
-		instance = new ThreadPool();
-	}
-	return instance;
-}
+//ThreadPool* ThreadPool::getInstance()
+//{
+//	if (instance == nullptr)
+//	{
+//		instance = new ThreadPool();
+//	}
+//	return instance;
+//}
 
 void ThreadPool::addTask(std::function<void*()> func)
 {

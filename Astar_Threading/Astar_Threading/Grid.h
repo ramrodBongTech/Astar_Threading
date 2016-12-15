@@ -16,7 +16,6 @@ public:
 	void							draw(Renderer& renderer);						// Standard draw method
 
 	Tile*							getTile(std::pair<int, int> index);				// Returns the tile at a specific index on the grid
-	//int								getNumTiles();									// Returns the number of rows in the grid
 	std::vector<Tile*>				getNeighbourNodes(std::pair<int, int> index);	// Returns a vector of tiles that are adjacent to a specific index
 
 	void							resetBoard();									// Resets the board

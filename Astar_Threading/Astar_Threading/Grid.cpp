@@ -106,8 +106,6 @@ Tile* Grid::getTile(std::pair<int, int> index)
 		return nullptr;
 }
 
-//int Grid::getNumTiles(){ return m_grid.size(); }
-
 std::vector<Tile*> Grid::getNeighbourNodes(std::pair<int, int> index)
 {
 	std::vector<Tile*> _tiles;

@@ -9,35 +9,37 @@
 class ThreadPool 
 {
 public:
-	ThreadPool();
+	ThreadPool();										
 	~ThreadPool();
-	static ThreadPool* getInstance();
+	//static ThreadPool* getInstance();
 
-	void addTask(std::function<void*()> func);
-	std::function<void*()> consume();
+	void addTask(std::function<void*()> func);			// Function to add a task to the list
+	std::function<void*()> consume();					// Function for the thread to consume a task
 
-	SDL_mutex* getMutex();
-	SDL_sem* getSemaphore();
+	SDL_mutex* getMutex();								// Gets the mutex
+	SDL_sem* getSemaphore();							// Gets the semaphore
 
 private:
-	// need to keep track of threads so we can join them
-	std::vector<SDL_Thread*> workers;
-	// the task queue
-	std::deque<std::function<void*()>> tasks;
-	// synchronization
-	SDL_mutex* mutex;
-	SDL_sem* semaphore;
+	std::vector<SDL_Thread*>			workers;		// Vector of threads that will consume tasks
 
-	int numThreads;
-	int numTasks;
+	std::deque<std::function<void*()>>	tasks;			// The tasks we want to do
+
+	SDL_mutex*							mutex;			// Mutex lock
+	SDL_sem*							semaphore;		// Semaphore
+
+	int									numThreads;		// Number of threads in the pool
+	int									numTasks;		// Number of tasks available
 };
 
-static ThreadPool* instance = 0;
+//static ThreadPool* instance = 0;
 
+// Static function for the thread to run
+// Runs an infinite loop waiting for the semaphore to signal
+// Gets a task from the list and runs it
 static int work(void* ptr)
 {
-	ThreadPool* tp = ThreadPool::getInstance();
-	SDL_mutex* mutex = tp->getMutex();
+	//ThreadPool* tp = ThreadPool::getInstance();
+	ThreadPool* tp = (ThreadPool*)ptr;
 	SDL_sem* semaphore = tp->getSemaphore();
 
 	// look for a work item

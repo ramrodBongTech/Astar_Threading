@@ -16,8 +16,8 @@
 class Game : public EventListener
 {
 public:
-	Game();												// Constructor
-	~Game();											// Standard destructor
+	Game();														// Constructor
+	~Game();													// Standard destructor
 
 	bool					init();								// Standard initialiser
 	void					destroy();							// Function to destroy all game objects
@@ -39,9 +39,9 @@ private:
 
 	Grid*					m_grid = nullptr;					// Pointer to grid object
 	Player*					m_player = nullptr;					// Pointer to player object
-	std::vector<Enemy*>		m_enemies;
+	std::vector<Enemy*>		m_enemies;							// The list of enemies
 
-	ThreadPool*				m_pool = nullptr;
+	ThreadPool*				m_pool = nullptr;					// The list of threads we use to run our Astar
 
 	void					resetBoard();						// Function to reset the board
 };
