@@ -26,4 +26,6 @@ private:
 	Rect					m_rect;													// The rectangle object we draw
 	Colour					m_colour;												// The colour of the rectangle
 	std::pair<int, int>		m_index;												// The index of the player on the grid
+
+	//SDL_mutex*				m_lock;
 };

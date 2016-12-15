@@ -10,72 +10,31 @@ const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 const float	SCREEN_WIDTH = 1200.0f;
 const float	SCREEN_HEIGHT = 1200.0f;
 
-/*template<typename T>
-class NodeSearchCostComparer 
-{
-public:
-	bool operator() (T n1, T n2)
-	{
-		return n1->getFScore() > n2->getFScore();
-	}
-};
-
-template<typename T>
-class custom_priority_queue : public std::priority_queue<T, std::vector<T>, NodeSearchCostComparer>
-{
-public:
-
-	bool remove(const T& value) {
-		auto it = std::find(this->c.begin(), this->c.end(), value);
-		if (it != this->c.end()) {
-			this->c.erase(it);
-			std::make_heap(this->c.begin(), this->c.end(), this->comp);
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-};*/
-
-class CostComparer { public: bool operator() (Tile* n1, Tile* n2) { return n1->getFScore() > n2->getFScore(); } };
-
-struct ThreadData{
-	Tile* start = nullptr;
-	Tile* end = nullptr;
-	Grid* grid;
-};
+class CostComparer { public: bool operator() (std::pair<Tile*, int> n1, std::pair<Tile*, int> n2) { return n1.second > n2.second; } };
 
 int getCost(Tile* t1, Tile* t2)
 {
-	int n = std::sqrt(((t1->getPosition().x - t2->getPosition().x) * (t1->getPosition().x - t2->getPosition().x)) + ((t1->getPosition().y - t2->getPosition().y) * (t1->getPosition().y - t2->getPosition().y)));
-	return n;
+	return std::sqrt(((t1->getPosition().x - t2->getPosition().x) * (t1->getPosition().x - t2->getPosition().x)) + ((t1->getPosition().y - t2->getPosition().y) * (t1->getPosition().y - t2->getPosition().y)));
 }
 
-int threadedAstar(void* data)
+void* Astar(Tile* start, Tile* end, Grid* grid)
 {
-	priority_queue<Tile*, std::vector<Tile*>, CostComparer> open = priority_queue<Tile*, std::vector<Tile*>, CostComparer>();
+	priority_queue<std::pair<Tile*, int>, std::vector<std::pair<Tile*, int>>, CostComparer> open = priority_queue<std::pair<Tile*, int>, std::vector<std::pair<Tile*, int>>, CostComparer>();
 	std::vector<Tile*> closed = std::vector<Tile*>();
 	std::map<Tile*, bool> marked = std::map<Tile*, bool>();
-	std::map<Tile*, float> cost = std::map<Tile*, float>();
+	std::map<Tile*, int> cost = std::map<Tile*, int>();
 	std::map<Tile*, Tile*> previous = std::map<Tile*, Tile*>();
-
-	ThreadData* tdata = (ThreadData*)data;
-	Tile* start = tdata->start;
-	Tile* end = tdata->end;
-	Grid* grid = tdata->grid;
 
 	marked[start] = true;
 	cost[start] = 0;
 	previous[start] = nullptr;
-	start->setFScore(getCost(start, end));
-	open.push(start);
+	open.push(std::pair<Tile*, int>(start, getCost(start, end)));
 
 	Tile* current = nullptr;
 
 	while (!open.empty())
 	{
-		current = open.top();
+		current = open.top().first;
 		closed.push_back(current);
 		open.pop();
 
@@ -87,25 +46,21 @@ int threadedAstar(void* data)
 		{
 			if (std::find(closed.begin(), closed.end(), next) == closed.end())
 			{
-				int g = cost[current] + std::sqrt(((current->getPosition().x - next->getPosition().x) * (current->getPosition().x - next->getPosition().x)) + ((current->getPosition().y - next->getPosition().y) * (current->getPosition().y - next->getPosition().y)));
-				int f = g + std::sqrt(((next->getPosition().x - end->getPosition().x) * (next->getPosition().x - end->getPosition().x)) + ((next->getPosition().y - end->getPosition().y) * (next->getPosition().y - end->getPosition().y)));
+				int g = cost[current] + getCost(current, next);
+				int f = g + getCost(next, end);
 
 				if (!marked[next])
 				{
 					cost[next] = g;
-					next->setFScore(f);
-
 					marked[next] = true;
 					previous[next] = current;
-					//next->setColor(Colour(128, 128, 128));
-					open.push(next);
+					open.push(std::pair<Tile*, int>(next, f));
 				}
 				else
 				{
 					if (g <= cost[next])
 					{
 						cost[next] = g;
-						next->setFScore(f);
 						previous[next] = current;
 					}
 				}
@@ -124,6 +79,7 @@ Game::Game():
 	m_lastTime(0),
 	m_quit(false),
 	m_numTiles(30),
+	m_numEnemies(5),
 	m_grid(new Grid(SCREEN_WIDTH, SCREEN_HEIGHT, m_numTiles)),
 	m_player(new Player(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, Point2D(0, 0), std::pair<int, int>(0, 0)))
 {}
@@ -134,24 +90,28 @@ Game::~Game()
 	m_grid = nullptr;
 	delete m_player;
 	m_player = nullptr;
-	delete m_enemy;
-	m_enemy = nullptr;
+	m_enemies.clear();
 }
 
 bool Game::init()
 {
 	cout << "Number Tiles: " << m_numTiles << endl;
 
-	Tile* _t = m_grid->getTile(std::pair<int, int>(5,5/*rand() % m_numTiles, rand() % m_numTiles*/));
+	for (int i = 0; i < m_numEnemies; i++)
+	{
+		std::pair<int, int> index = std::pair<int, int>(rand() % (m_numTiles - 1), rand() % (m_numTiles - 1));
+		Tile* _t = m_grid->getTile(index);
 
-	/*while (_t->isWall())
-		_t = m_grid->getTile(std::pair<int, int>(rand() % m_numTiles, rand() % m_numTiles));*/
+		while (_t == nullptr)
+		{
+			index = std::pair<int, int>(rand() % (m_numTiles - 1), rand() % (m_numTiles - 1));
+			_t = m_grid->getTile(index);
+		}
 
-	m_enemy = new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex());
+		m_enemies.push_back(new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex()));
+	}
 
-	_t = m_grid->getTile(std::pair<int, int>(5, 0));
-
-	en2 = new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex());
+	m_pool = ThreadPool::getInstance();
 
 	//creates our renderer, which looks after drawing and the window
 	m_renderer.init(Size2D(SCREEN_WIDTH, SCREEN_HEIGHT), "A* Threading");
@@ -191,8 +151,10 @@ void Game::render()
 
 	m_grid->draw(m_renderer);
 	m_player->draw(m_renderer);
-	m_enemy->draw(m_renderer);
-	en2->draw(m_renderer);
+	for (int i = 0; i < m_enemies.size(); i++)
+	{
+		m_enemies[i]->draw(m_renderer);
+	}
 
 	m_renderer.present();
 }
@@ -220,22 +182,23 @@ void Game::loop()
 
 void Game::onEvent(EventListener::Event evt)
 {
-	ThreadData td;
-
 	switch (evt)
 	{
 	case(EventListener::Event::ONE) :
 		m_numTiles = 30;
+		m_numEnemies = 5;
 		resetBoard();
 		cout << "Number Tiles: " << m_numTiles << endl;
 		break;
 	case(EventListener::Event::TWO) :
 		m_numTiles = 100;
+		m_numEnemies = 50;
 		resetBoard();
 		cout << "Number Tiles: " << m_numTiles << endl;
 		break;
 	case(EventListener::Event::THREE) :
 		m_numTiles = 1000;
+		m_numEnemies = 500;
 		resetBoard();
 		cout << "Number Tiles: " << m_numTiles << endl;
 		break;
@@ -264,24 +227,10 @@ void Game::onEvent(EventListener::Event evt)
 	case(EventListener::Event::RETURN) :
 		m_grid->resetBoard();
 		
-		td.start = m_grid->getTile(m_player->getIndex());
-		td.end = m_grid->getTile(m_enemy->getIndex());
-		td.grid = m_grid;
-
-		m_thread1 = SDL_CreateThread(threadedAstar, "astar1", &td);
-		//SDL_Delay(250);
-		SDL_WaitThread(m_thread1, NULL);
-
-		td.start = m_grid->getTile(m_player->getIndex());
-		td.end = m_grid->getTile(en2->getIndex());
-		td.grid = m_grid;
-
-		m_thread2 = SDL_CreateThread(threadedAstar, "astar2", &td);
-		//SDL_Delay(250);
-		SDL_WaitThread(m_thread2, NULL);
-
-
-		//Astar(m_grid->getTile(m_player->getIndex()), m_grid->getTile(m_enemy->getIndex()));
+		for (int i = 0; i < m_enemies.size(); i++)
+		{
+			m_pool->addTask(std::bind(Astar, m_grid->getTile(m_player->getIndex()), m_grid->getTile(m_enemies[i]->getIndex()), m_grid));
+		}
 		break;
 	default:
 		break;
@@ -296,84 +245,18 @@ void Game::resetBoard()
 	delete m_player;
 	m_player = new Player(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, Point2D(0, 0), std::pair<int, int>(0, 0));
 	
-	delete m_enemy;
-	Tile* _t = m_grid->getTile(std::pair<int, int>(rand() % m_numTiles, rand() % m_numTiles));
-
-	while (_t == nullptr || _t->isWall())
-		_t = m_grid->getTile(std::pair<int, int>(rand() % m_numTiles, rand() % m_numTiles));
-
-	m_enemy = new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex());
-}
-
-void Game::Astar(Tile* start, Tile* end)
-{
-	priority_queue<Tile*, std::vector<Tile*>, CostComparer> open = priority_queue<Tile*, std::vector<Tile*>, CostComparer>();
-	std::vector<Tile*> closed = std::vector<Tile*>();
-	std::map<Tile*, bool> marked = std::map<Tile*, bool>();
-	std::map<Tile*, float> cost = std::map<Tile*, float>();
-	std::map<Tile*, Tile*> previous = std::map<Tile*, Tile*>();
-
-	int weight = 1;
-	marked[start] = true;
-	cost[start] = 0;
-	previous[start] = nullptr;
-	start->setFScore(getCost(start, end));
-	open.push(start);
-
-	Tile* current = nullptr;
-
-	while (!open.empty())
+	m_enemies.clear();
+	for (int i = 0; i < m_numEnemies; i++)
 	{
-		current = open.top();
-		closed.push_back(current);
-		open.pop();
+		std::pair<int, int> index = std::pair<int, int>(rand() % (m_numTiles - 1), rand() % (m_numTiles - 1));
+		Tile* _t = m_grid->getTile(index);
 
-		if (current == end)
-			break;
-
-		std::vector<Tile*> _neighbourNodes = m_grid->getNeighbourNodes(current->getIndex());
-		for (Tile* next : _neighbourNodes)
+		while (_t == nullptr)
 		{
-			if (std::find(closed.begin(), closed.end(), next) == closed.end())
-			{
-				int g = cost[current] + getCost(current, next);
-				int f = g + getCost(next, end);
-
-				if (!marked[next])
-				{
-					cost[next] = g;
-					next->setFScore(f);
-
-					marked[next] = true;
-					previous[next] = current;
-					//next->setColor(Colour(128, 128, 128));
-					open.push(next);
-				}
-				else
-				{
-					if (g <= cost[next])
-					{
-						cost[next] = g;
-						next->setFScore(f);
-						previous[next] = current;
-					}
-				}
-			}
+			index = std::pair<int, int>(rand() % (m_numTiles - 1), rand() % (m_numTiles - 1));
+			_t = m_grid->getTile(index);
 		}
-	}
-	while (previous[current] != nullptr)
-	{
-		current->setColor(Colour(128, 0, 128));
-		current = previous[current];
-	}
-	int check = 0;
-}
 
-int Game::getCost(Tile* t1, Tile* t2)
-{
-	//int c = abs((t2->getPosition().x - t1->getPosition().x)) + std::abs((t2->getPosition().y - t1->getPosition().y));
-	//int b = (abs(t2->getIndex().first - t1->getIndex().first) + abs(t2->getIndex().second - t1->getIndex().second));
-	int n = std::sqrt(((t1->getPosition().x - t2->getPosition().x) * (t1->getPosition().x - t2->getPosition().x)) + ((t1->getPosition().y - t2->getPosition().y) * (t1->getPosition().y - t2->getPosition().y)));
-	return n;
+		m_enemies.push_back(new Enemy(SCREEN_WIDTH / m_numTiles, SCREEN_HEIGHT / m_numTiles, _t->getPosition(), _t->getIndex()));
+	}
 }
-

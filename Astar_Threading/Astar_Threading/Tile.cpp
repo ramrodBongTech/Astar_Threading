@@ -2,7 +2,6 @@
 #include "Tile.h"
 
 Tile::Tile(float width, float height, Point2D pos, std::pair<int, int> index) :
-	m_fScore(0),
 	m_wall(false),
 	m_rect(Rect(pos, Size2D(width, height))),
 	m_index(index),
@@ -12,14 +11,6 @@ Tile::Tile(float width, float height, Point2D pos, std::pair<int, int> index) :
 Tile::~Tile()
 {
 	SDL_DestroyMutex(m_lock);
-}
-
-int Tile::getFScore()
-{
-	SDL_LockMutex(m_lock);
-	int temp = m_fScore;
-	SDL_UnlockMutex(m_lock);
-	return temp;
 }
 
 Point2D Tile::getPosition()
@@ -50,13 +41,6 @@ void Tile::setColor(Colour c)
 {
 	SDL_LockMutex(m_lock);
 	m_colour = c;
-	SDL_UnlockMutex(m_lock);
-}
-
-void Tile::setFScore(float fScore)
-{
-	SDL_LockMutex(m_lock);
-	m_fScore = fScore;
 	SDL_UnlockMutex(m_lock);
 }
 
