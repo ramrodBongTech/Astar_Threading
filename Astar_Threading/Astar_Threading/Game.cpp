@@ -7,8 +7,8 @@ using namespace std;
 
 const int SCREEN_FPS = 100;
 const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
-const float	SCREEN_WIDTH = 1200.0f;
-const float	SCREEN_HEIGHT = 1200.0f;
+const float	SCREEN_WIDTH = 1000.0f;
+const float	SCREEN_HEIGHT = 1000.0f;
 
 class CostComparer { public: bool operator() (std::pair<Tile*, int> n1, std::pair<Tile*, int> n2) { return n1.second > n2.second; } };
 
